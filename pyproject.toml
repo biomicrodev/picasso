@@ -1,0 +1,42 @@
+[project]
+name = "picasso"
+version = "0.0.1"
+description = "Spectral unmixing of fluorescence images"
+readme = "README.md"
+requires-python = ">=3.7"
+license = { file = "LICENSE" }
+authors = [{ name = "Sebastian Ahn" }]
+keywords = [
+    "fluorescence microscopy",
+    "imaging",
+    "spectral unmixing"
+]
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Image Processing",
+]
+dependencies = [
+    "fast-histogram",
+    "numpy",
+    "scipy",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "jupyter",
+    "perfplot",
+]
+
+[project.urls]
+repository = "https://github.com/biomicrodev/picasso"
+laboratory = "https://jonaslab.bwh.harvard.edu"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
