@@ -31,6 +31,10 @@ dev = [
     "black",
     "jupyter",
     "perfplot",
+    "pooch",
+    "pygifsicle",
+    "py-spy",
+    "scikit-image",
 ]
 
 [project.urls]
