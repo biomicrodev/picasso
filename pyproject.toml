@@ -1,11 +1,10 @@
-[project]
+[tool.poetry]
 name = "picasso"
 version = "0.0.1"
-description = "Spectral unmixing of fluorescence images"
+description = "Linear spectral unmixing of fluorescence images"
 readme = "README.md"
-requires-python = ">=3.7"
-license = { file = "LICENSE" }
-authors = [{ name = "Sebastian Ahn" }]
+license = "LICENSE"
+authors = ["Sebastian Ahn <wahn1@bwh.harvard.edu>"]
 keywords = [
     "fluorescence microscopy",
     "imaging",
@@ -14,33 +13,29 @@ keywords = [
 classifiers = [
     "Development Status :: 1 - Planning",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Image Processing",
 ]
-dependencies = [
-    "fast-histogram",
-    "numpy",
-    "scipy",
-    "tqdm",
-]
-
-[project.optional-dependencies]
-dev = [
-    "black",
-    "jupyter",
-    "perfplot",
-    "pooch",
-    "pygifsicle",
-    "py-spy",
-    "scikit-image",
-]
-
-[project.urls]
 repository = "https://github.com/biomicrodev/picasso"
-laboratory = "https://jonaslab.bwh.harvard.edu"
+homepage = "https://jonaslab.bwh.harvard.edu"
+packages = [{ include = "picasso", from = "src" }]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+fast-histogram = "^0.11"
+numpy = "^1.24"
+scipy = "^1.8"
+tqdm = "^4.65"
+
+[tool.poetry.group.dev.dependencies]
+jupyter = "^1.0"
+perfplot = "^0.10"
+pooch = "^1.7"
+pygifsicle = "^1.0"
+py-spy = "^0.3"
+scikit-image = "^0.20"
+viztracer = "^0.15.6"
+joblib = "^1.2.0"
 
 [build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

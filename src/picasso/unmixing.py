@@ -1,13 +1,11 @@
-from __future__ import annotations
-
 import math
 import sys
 
 import numpy as np
 import numpy.typing as npt
 from fast_histogram import histogram2d, histogram1d
-from scipy.optimize import OptimizeResult, minimize
-from skimage import img_as_float
+from scipy.optimize import fmin_cobyla
+from skimage.util import img_as_float
 from tqdm import tqdm
 
 
@@ -81,23 +79,17 @@ def regional_mi(x: npt.NDArray, y: npt.NDArray) -> float:
 
 
 def minimize_mi(x: npt.NDArray, y: npt.NDArray, *, init_alpha=0.0) -> float:
-    def func(alpha: float):
-        # return regional_mutual_information(x, y - alpha * x)
+    def func(alpha: npt.NDArray):
         return mutual_information(x, y - alpha * x)
 
-    non_neg_alpha_constraint = dict(
-        type="ineq",
-        fun=lambda a: a,
-        catol=1e-7,
-    )
-
-    result: OptimizeResult = minimize(
-        func,
+    result: npt.NDArray = fmin_cobyla(
+        func=func,
         x0=np.array([init_alpha]),
-        method="COBYLA",
-        constraints=non_neg_alpha_constraint,
+        cons=[lambda a: a],
+        rhobeg=1e-2,
+        rhoend=1e-8,
     )
-    return result.x.item()
+    return result.item()
 
 
 def compute_unmixing_matrix(
@@ -105,19 +97,19 @@ def compute_unmixing_matrix(
     *,
     max_iters=1_000,
     step_mult=0.1,
-    constrain_diag=True,
     verbose=False,
     return_iters=False,
 ) -> npt.NDArray:
+    assert image.ndim == 3  # CYX
     n_channels = image.shape[0]
-    mats = []
 
     image = img_as_float(image)
     image_orig = image.copy()
 
-    mat_cumul = np.eye(n_channels)
-    mat_last = np.eye(n_channels)
+    mat_cumul = np.eye(n_channels, dtype=float)
+    mat_last = np.eye(n_channels, dtype=float)
 
+    mats = []
     for _ in tqdm(
         range(max_iters),
         disable=not verbose,
@@ -132,27 +124,35 @@ def compute_unmixing_matrix(
                 if row == col:
                     continue
 
-                mat[row, col] = -step_mult * minimize_mi(
-                    image[col, ...], image[row, ...]
+                coef = minimize_mi(
+                    image[col], image[row], init_alpha=mat_last[row, col]
                 )
+                mat[row, col] = -step_mult * coef
 
         # check this early on
         if np.allclose(mat, mat_last):
             break
+        mat_last = mat.copy()
 
         # update matrix
-        mat_last = mat
         assert mat_cumul.shape == (n_channels, n_channels)
         mat_cumul = mat @ mat_cumul
-        if constrain_diag:
-            for i in range(n_channels):
-                mat_cumul[i, i] = 1
-        mats.append(mat_cumul)
+
+        # constrain coefficients to 1.0 along the diagonal, and negative for
+        # off-diagonal entries
+        for row in range(n_channels):
+            for col in range(n_channels):
+                if row == col:
+                    mat_cumul[row, col] = 1.0
+                else:
+                    if mat_cumul[row, col] > 0.0:
+                        mat_cumul[row, col] = 0.0
+        mats.append(mat_cumul.copy())
 
         # update the next iteration of image
-        # several times faster than np.einsum
-        assert mat.shape == (n_channels, n_channels)
+        assert mat_cumul.shape == (n_channels, n_channels)
         assert image.ndim == 3
+        # several times faster than np.einsum
         image = np.tensordot(mat_cumul, image_orig, axes=1)
 
     if return_iters:
